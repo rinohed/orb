@@ -44,14 +44,14 @@
             targetY += (mouseY - targetY) * 0.1;
         });
 
-        const vertexShaderSource = 
+        const vertexShaderSource = `
             attribute vec2 position;
             void main() {
                 gl_Position = vec4(position, 0.0, 1.0);
             }
-        ;
+        `;
 
-        const fragmentShaderSource = 
+        const fragmentShaderSource = `
             precision highp float;
             uniform float time;
             uniform vec2 resolution;
@@ -86,7 +86,7 @@
 
                 gl_FragColor = vec4(color * glow, glow);
             }
-        ;
+        `;
 
         function createShader(gl, type, source) {
             const shader = gl.createShader(type);
