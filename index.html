@@ -1,13 +1,27 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BRADY UX Orb - Intelligent & Alive</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>BRADY UX Orb</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body, html { background: black; overflow: hidden; display: flex; justify-content: center; align-items: center; width: 100%; height: 100%; }
-        canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+
+        html, body {
+            background: transparent;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
     </style>
 </head>
 <body>
@@ -15,11 +29,11 @@
 
     <script>
         const canvas = document.getElementById("orbCanvas");
-        const gl = canvas.getContext("webgl");
+        const gl = canvas.getContext("webgl", { alpha: true });
 
         function resizeCanvas() {
-            canvas.width = canvas.clientWidth;
-            canvas.height = canvas.clientHeight;
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
             gl.viewport(0, 0, canvas.width, canvas.height);
         }
         window.addEventListener("resize", resizeCanvas);
@@ -29,11 +43,18 @@
         let targetX = 0.0, targetY = 0.0;
 
         function updateOrbPosition() {
-            targetX = Math.sin(Date.now() * 0.0003) * 0.15;
-            targetY = Math.cos(Date.now() * 0.0002) * 0.15;
+            targetX = Math.sin(Date.now() * 0.0001) * 0.2;
+            targetY = Math.cos(Date.now() * 0.00015) * 0.2;
             requestAnimationFrame(updateOrbPosition);
         }
         updateOrbPosition();
+
+        document.addEventListener("mousemove", (event) => {
+            let mouseX = (event.clientX / window.innerWidth - 0.5) * 0.2;
+            let mouseY = (event.clientY / window.innerHeight - 0.5) * 0.2;
+            targetX += (mouseX - targetX) * 0.1;
+            targetY += (mouseY - targetY) * 0.1;
+        });
 
         const vertexShaderSource = `
             attribute vec2 position;
@@ -53,7 +74,8 @@
             }
 
             void main() {
-                vec2 uv = (gl_FragCoord.xy - 0.5 * resolution) / resolution.y;
+                // Shift UV to position orb on the right
+                vec2 uv = (gl_FragCoord.xy - 0.7 * resolution) / resolution.y;
 
                 vec2 offset = orbOffset;
                 float len = length(uv + offset);
@@ -62,8 +84,8 @@
                 float flicker = sin(time * 2.0) * 0.05;
                 float glow = smoothstep(0.35, 0.05, len) + flicker + noise;
 
-                vec3 colorA = vec3(0.78, 0.67, 0.98); // #C7ABFB
-                vec3 colorB = vec3(0.1, 0.2, 0.5);
+                vec3 colorA = vec3(0.2, 0.6, 1.0);
+                vec3 colorB = vec3(1.0, 0.1, 0.8);
                 vec3 color = mix(colorA, colorB, sin(time * 0.6 + len * 6.0) * 0.5 + 0.5);
                 color += vec3(random(uv + time * 0.1) * 0.04);
 
@@ -115,6 +137,9 @@
             orbY += (targetY - orbY) * 0.02;
 
             gl.useProgram(program);
+            gl.clearColor(0.0, 0.0, 0.0, 0.0);
+            gl.clear(gl.COLOR_BUFFER_BIT);
+
             gl.uniform1f(timeUniform, time * 0.001);
             gl.uniform2f(resolutionUniform, canvas.width, canvas.height);
             gl.uniform2f(orbOffsetUniform, orbX, orbY);
